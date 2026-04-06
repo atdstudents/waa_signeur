@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Waasigneur — Projets</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+    :root { --orange:#E8621A; --dark:#0d0d0d; --dark2:#1a1a1a; --white:#fff; --gray:rgba(255,255,255,0.45); }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { width:100%; height:100%; overflow:hidden; background:var(--dark); font-family:'DM Sans',sans-serif; color:var(--white); }
+
+    /* INTRO */
+    #intro { position:fixed; inset:0; z-index:1000; background:var(--dark); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:1rem; }
+    .intro-logo { font-family:'Playfair Display',serif; font-size:2.5rem; font-weight:900; color:var(--white); opacity:0; transform:translateY(20px); animation:introUp 0.7s 0.2s forwards ease; }
+    .intro-logo span { color:var(--orange); }
+    .intro-sub { font-size:0.8rem; color:rgba(255,255,255,0.3); letter-spacing:3px; text-transform:uppercase; opacity:0; animation:introUp 0.7s 0.5s forwards ease; }
+    .intro-bar-wrap { width:160px; height:2px; background:rgba(255,255,255,0.08); border-radius:2px; overflow:hidden; margin-top:0.8rem; opacity:0; animation:introUp 0.5s 0.7s forwards ease; }
+    .intro-bar { height:100%; background:var(--orange); width:0; animation:barFill 1s 0.8s forwards ease; }
+    @keyframes introUp { to { opacity:1; transform:translateY(0); } }
+    @keyframes barFill { to { width:100%; } }
+
+    /* CANVAS BG */
+    #bg-canvas { position:fixed; inset:0; z-index:0; opacity:0.6; }
+
+    /* TOPBAR */
+    .topbar {
+      position:fixed; top:0; left:0; right:0; z-index:100;
+      padding:1.2rem 2.5rem; display:flex; align-items:center; justify-content:space-between;
+      background:linear-gradient(to bottom,rgba(13,13,13,0.95),transparent);
+      opacity:0; transition:opacity 0.8s;
+    }
+    .topbar.visible { opacity:1; }
+    .logo-text { font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:900; color:var(--white); text-decoration:none; }
+    .logo-text span { color:var(--orange); }
+    .top-nav { display:flex; gap:1.5rem; align-items:center; }
+    .top-nav a { color:rgba(255,255,255,0.45); text-decoration:none; font-size:0.84rem; font-weight:500; transition:color 0.2s; }
+    .top-nav a:hover, .top-nav a.active { color:var(--orange); }
+    .top-cta { background:var(--orange)!important; color:var(--white)!important; padding:0.4rem 1.1rem; border-radius:50px; font-weight:600!important; box-shadow:0 4px 15px rgba(232,98,26,0.35); }
+
+    /* MAIN LAYOUT */
+    #main { position:fixed; inset:0; z-index:10; display:flex; flex-direction:column; opacity:0; transition:opacity 0.8s; }
+    #main.visible { opacity:1; }
+
+    /* SPECIALTY WHEEL (left side) */
+    #wheel-area {
+      position:fixed; left:0; top:0; bottom:0; width:280px; z-index:20;
+      display:flex; flex-direction:column; justify-content:center; align-items:center;
+      padding:5rem 1rem 2rem;
+    }
+    .wheel-title { font-size:0.7rem; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:2px; margin-bottom:1.5rem; }
+    .spec-btn {
+      width:220px; padding:0.9rem 1.2rem; margin-bottom:0.6rem;
+      border-radius:14px; border:1.5px solid rgba(255,255,255,0.08);
+      background:rgba(255,255,255,0.03); cursor:pointer;
+      display:flex; align-items:center; gap:0.8rem;
+      transition:all 0.3s; text-align:left; color:var(--white);
+      font-family:'DM Sans',sans-serif;
+    }
+    .spec-btn:hover { border-color:rgba(232,98,26,0.4); background:rgba(232,98,26,0.06); transform:translateX(4px); }
+    .spec-btn.active { border-color:var(--orange); background:rgba(232,98,26,0.12); transform:translateX(6px); box-shadow:0 0 20px rgba(232,98,26,0.15); }
+    .spec-icon { font-size:1.3rem; flex-shrink:0; }
+    .spec-info { flex:1; }
+    .spec-name { font-size:0.85rem; font-weight:600; }
+    .spec-count { font-size:0.7rem; color:rgba(255,255,255,0.35); margin-top:0.1rem; }
+    .spec-dot { width:8px; height:8px; border-radius:50%; background:var(--orange); flex-shrink:0; opacity:0; transition:opacity 0.2s; }
+    .spec-btn.active .spec-dot { opacity:1; }
+
+    /* PROJECTS AREA */
+    #projects-area {
+      position:fixed; left:280px; right:0; top:70px; bottom:0; z-index:15;
+      overflow:hidden; padding:1.5rem 2rem 1.5rem 1.5rem;
+    }
+
+    /* CATEGORY HEADER */
+    .cat-header { margin-bottom:1.5rem; }
+    .cat-header-tag { font-size:0.7rem; color:var(--orange); text-transform:uppercase; letter-spacing:2px; font-weight:600; margin-bottom:0.3rem; }
+    .cat-header-title { font-family:'Playfair Display',serif; font-size:2rem; font-weight:900; line-height:1.1; }
+    .cat-header-sub { font-size:0.82rem; color:rgba(255,255,255,0.35); margin-top:0.3rem; }
+
+    /* PROJECTS GRID */
+    #projects-grid {
+      display:grid; grid-template-columns:repeat(auto-fill, minmax(240px,1fr));
+      gap:1.2rem; overflow-y:auto; max-height:calc(100vh - 200px);
+      padding-right:0.5rem; padding-bottom:2rem;
+    }
+    #projects-grid::-webkit-scrollbar { width:4px; }
+    #projects-grid::-webkit-scrollbar-track { background:transparent; }
+    #projects-grid::-webkit-scrollbar-thumb { background:rgba(232,98,26,0.3); border-radius:2px; }
+
+    .project-card {
+      border-radius:16px; overflow:hidden; background:rgba(255,255,255,0.04);
+      border:1px solid rgba(255,255,255,0.07); cursor:pointer;
+      transition:transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+      opacity:0; transform:translateY(20px);
+      animation:cardIn 0.5s forwards ease;
+    }
+    .project-card:hover { transform:translateY(-6px) scale(1.02); box-shadow:0 20px 50px rgba(0,0,0,0.5); border-color:rgba(232,98,26,0.4); }
+    @keyframes cardIn { to { opacity:1; transform:translateY(0); } }
+
+    .card-img { height:180px; display:flex; align-items:center; justify-content:center; font-size:3.5rem; position:relative; overflow:hidden; }
+    .card-img::after { content:''; position:absolute; bottom:0; left:0; right:0; height:60px; background:linear-gradient(transparent,rgba(13,13,13,0.8)); }
+    .card-body { padding:1rem; }
+    .card-spec { font-size:0.68rem; color:var(--orange); text-transform:uppercase; letter-spacing:1.5px; font-weight:600; margin-bottom:0.3rem; }
+    .card-title { font-family:'Playfair Display',serif; font-size:0.95rem; font-weight:700; margin-bottom:0.3rem; line-height:1.3; }
+    .card-student { font-size:0.78rem; color:rgba(255,255,255,0.4); display:flex; align-items:center; gap:0.4rem; }
+    .card-badge { display:inline-block; font-size:0.62rem; background:rgba(232,98,26,0.2); color:var(--orange); padding:0.12rem 0.5rem; border-radius:50px; font-weight:700; margin-top:0.4rem; }
+
+    /* PROJECT DETAIL OVERLAY */
+    #detail {
+      position:fixed; inset:0; z-index:200; background:rgba(10,10,10,0.97);
+      display:flex; align-items:center; justify-content:center;
+      opacity:0; pointer-events:none; transition:opacity 0.4s;
+      backdrop-filter:blur(20px);
+    }
+    #detail.open { opacity:1; pointer-events:all; }
+    .detail-box {
+      width:min(720px,90vw); max-height:85vh; overflow-y:auto;
+      background:rgba(25,25,25,0.98); border-radius:24px;
+      border:1px solid rgba(232,98,26,0.2); padding:2.5rem;
+      transform:scale(0.92); transition:transform 0.4s;
+      box-shadow:0 40px 100px rgba(0,0,0,0.6);
+    }
+    #detail.open .detail-box { transform:scale(1); }
+    .detail-box::-webkit-scrollbar { width:4px; }
+    .detail-box::-webkit-scrollbar-thumb { background:rgba(232,98,26,0.3); border-radius:2px; }
+
+    .detail-close { position:absolute; top:1.5rem; right:1.5rem; width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,0.06); border:none; color:rgba(255,255,255,0.5); font-size:1rem; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; }
+    .detail-close:hover { background:var(--orange); color:#fff; }
+
+    .detail-header { display:flex; gap:1.5rem; align-items:flex-start; margin-bottom:1.5rem; }
+    .detail-thumb { width:80px; height:80px; border-radius:16px; display:flex; align-items:center; justify-content:center; font-size:2.5rem; flex-shrink:0; }
+    .detail-spec { font-size:0.72rem; color:var(--orange); text-transform:uppercase; letter-spacing:2px; font-weight:600; margin-bottom:0.4rem; }
+    .detail-title { font-family:'Playfair Display',serif; font-size:1.6rem; font-weight:900; margin-bottom:0.5rem; line-height:1.2; }
+    .detail-meta { display:flex; gap:1.5rem; flex-wrap:wrap; }
+    .detail-meta-item { display:flex; flex-direction:column; gap:0.1rem; }
+    .detail-meta-label { font-size:0.65rem; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:1px; }
+    .detail-meta-value { font-size:0.88rem; font-weight:600; }
+
+    .detail-divider { height:1px; background:rgba(255,255,255,0.07); margin:1.2rem 0; }
+    .detail-desc-title { font-size:0.75rem; text-transform:uppercase; letter-spacing:1.5px; color:rgba(255,255,255,0.3); margin-bottom:0.6rem; }
+    .detail-desc { font-size:0.9rem; color:rgba(255,255,255,0.65); line-height:1.8; }
+
+    .detail-images { display:grid; grid-template-columns:repeat(3,1fr); gap:0.8rem; margin-top:1.2rem; }
+    .detail-img-item { border-radius:12px; overflow:hidden; height:120px; display:flex; align-items:center; justify-content:center; font-size:2.5rem; border:1px solid rgba(255,255,255,0.06); }
+
+    .detail-badge { display:inline-flex; align-items:center; gap:0.4rem; background:rgba(232,98,26,0.15); border:1px solid rgba(232,98,26,0.3); color:var(--orange); font-size:0.78rem; font-weight:700; padding:0.4rem 1rem; border-radius:50px; margin-top:1.2rem; }
+
+    /* BOTTOM BAR */
+    .bottombar {
+      position:fixed; bottom:0; left:280px; right:0; z-index:20;
+      padding:1rem 2rem; display:flex; align-items:center; justify-content:space-between;
+      background:linear-gradient(to top,rgba(13,13,13,0.95),transparent);
+    }
+    .stats-row { display:flex; gap:2rem; }
+    .stat-item { text-align:center; }
+    .stat-num { font-family:'Playfair Display',serif; font-size:1.2rem; font-weight:900; color:var(--orange); }
+    .stat-lbl { font-size:0.62rem; color:rgba(255,255,255,0.25); text-transform:uppercase; letter-spacing:1px; }
+    .back-btn { display:flex; align-items:center; gap:0.5rem; color:rgba(255,255,255,0.4); text-decoration:none; font-size:0.84rem; font-weight:500; transition:color 0.2s; }
+    .back-btn:hover { color:var(--orange); }
+
+    /* NO PROJECTS */
+    .empty-state { grid-column:1/-1; text-align:center; padding:4rem 2rem; color:rgba(255,255,255,0.2); }
+    .empty-icon { font-size:3rem; margin-bottom:1rem; }
+    .empty-text { font-size:0.9rem; }
+
+    @media(max-width:768px) {
+      #wheel-area { position:fixed; left:0; right:0; top:auto; bottom:0; width:100%; flex-direction:row; height:auto; padding:0.8rem; overflow-x:auto; justify-content:flex-start; }
+      .spec-btn { width:auto; min-width:140px; padding:0.6rem 0.9rem; margin-bottom:0; margin-right:0.5rem; }
+      #projects-area { left:0; top:70px; bottom:90px; }
+      .bottombar { left:0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div id="intro">
+  <img src="logo_waasigneur.png" style="height:55px;opacity:0;transform:translateY(20px);animation:introUp 0.7s 0.2s forwards ease;" alt="Waasigneur"/>
+  <div class="intro-sub">Galerie des projets</div>
+  <div class="intro-bar-wrap"><div class="intro-bar"></div></div>
+</div>
+
+<!-- BG CANVAS -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- TOPBAR -->
+<div class="topbar" id="topbar">
+  <a href="index.html" style="display:flex;align-items:center;text-decoration:none;"><img src="logo_waasigneur.png" style="height:36px;" alt="Waasigneur"/></a>
+  <nav class="top-nav">
+    <a href="index.html">Accueil</a>
+    <a href="projects.html" class="active">Projets</a>
+    <a href="podcasts.html">Podcasts</a>
+    <a href="admin.html" class="top-cta">Admin →</a>
+  </nav>
+</div>
+
+<!-- SPECIALTY WHEEL -->
+<div id="wheel-area">
+  <div class="wheel-title">Filtrer par spécialité</div>
+  <button class="spec-btn active" onclick="filterSpec('all',this)">
+    <span class="spec-icon">✨</span>
+    <div class="spec-info"><div class="spec-name">Tous les projets</div><div class="spec-count" id="count-all">10 projets</div></div>
+    <div class="spec-dot"></div>
+  </button>
+  <button class="spec-btn" onclick="filterSpec('espace',this)">
+    <span class="spec-icon">🏛️</span>
+    <div class="spec-info"><div class="spec-name">Design Espace</div><div class="spec-count">Architecture · Scénographie</div></div>
+    <div class="spec-dot"></div>
+  </button>
+  <button class="spec-btn" onclick="filterSpec('produit',this)">
+    <span class="spec-icon">⚙️</span>
+    <div class="spec-info"><div class="spec-name">Design Produit</div><div class="spec-count">Industriel · Bijoux</div></div>
+    <div class="spec-dot"></div>
+  </button>
+  <button class="spec-btn" onclick="filterSpec('image',this)">
+    <span class="spec-icon">🎨</span>
+    <div class="spec-info"><div class="spec-name">Design Image</div><div class="spec-count">Production Graphique</div></div>
+    <div class="spec-dot"></div>
+  </button>
+  <button class="spec-btn" onclick="filterSpec('top',this)">
+    <span class="spec-icon">🏆</span>
+    <div class="spec-info"><div class="spec-name">Top projets</div><div class="spec-count">Sélection du jury</div></div>
+    <div class="spec-dot"></div>
+  </button>
+</div>
+
+<!-- PROJECTS AREA -->
+<div id="projects-area">
+  <div class="cat-header">
+    <div class="cat-header-tag" id="cat-tag">Tous les projets</div>
+    <div class="cat-header-title" id="cat-title">Galerie complète</div>
+    <div class="cat-header-sub" id="cat-sub">Explorez toutes les créations des étudiants de l'ISAM Mahdia</div>
+  </div>
+  <div id="projects-grid"></div>
+</div>
+
+<!-- BOTTOM BAR -->
+<div class="bottombar">
+  <a href="index.html" class="back-btn">← Retour à l'accueil</a>
+  <div class="stats-row">
+    <div class="stat-item"><div class="stat-num">10</div><div class="stat-lbl">Projets</div></div>
+    <div class="stat-item"><div class="stat-num">5</div><div class="stat-lbl">Spécialités</div></div>
+    <div class="stat-item"><div class="stat-num">10</div><div class="stat-lbl">Étudiants</div></div>
+  </div>
+</div>
+
+<!-- PROJECT DETAIL -->
+<div id="detail">
+  <div class="detail-box" style="position:relative">
+    <button class="detail-close" onclick="closeDetail()">✕</button>
+    <div id="detail-content"></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════
+// PROJECTS DATA — Modifie ici !
+// ══════════════════════════════════
+const PROJECTS = [
+  {
+    id:1, cat:'image', spec:'Production Graphique',
+    title:'Identité visuelle — Café Médina',
+    student:'Amira Ben Salah', supervisor:'Prof. Kamel Bouzid',
+    year:'2024-2025', icon:'🎨',
+    bg:'linear-gradient(135deg,#fde8d8,#f5c8a0)',
+    desc:'Création d\'une identité visuelle complète pour un café traditionnel dans la médina de Mahdia. Le projet inclut le logo, la charte graphique, les supports de communication et le packaging.',
+    images:['🎨','📐','🖨️'], badge:'🏆 Prix du jury', top:true
+  },
+  {
+    id:2, cat:'espace', spec:'Architecture d\'Intérieur',
+    title:'Villa Sahel — Réaménagement',
+    student:'Yassine Gharbi', supervisor:'Prof. Leila Mansouri',
+    year:'2024-2025', icon:'🏛️',
+    bg:'linear-gradient(135deg,#d8e8fd,#a0c8f5)',
+    desc:'Projet de réaménagement d\'une villa traditionnelle sur le littoral de Mahdia. Le concept intègre des éléments architecturaux locaux avec une approche contemporaine, en valorisant la lumière naturelle et les matériaux locaux.',
+    images:['🏛️','📐','🛋️'], badge:'🎖️ Meilleure présentation', top:true
+  },
+  {
+    id:3, cat:'produit', spec:'Design Bijoux',
+    title:'Collection Carthage',
+    student:'Sana Trabelsi', supervisor:'Prof. Nizar Hamrouni',
+    year:'2024-2025', icon:'💎',
+    bg:'linear-gradient(135deg,#fdd8f5,#f5a0e8)',
+    desc:'Une collection de bijoux contemporains inspirée du patrimoine punique de Carthage. Chaque pièce raconte une histoire à travers des motifs géométriques et des symboles anciens réinterprétés avec des techniques modernes.',
+    images:['💎','✨','🔮'], badge:'✨ Coup de cœur', top:true
+  },
+  {
+    id:4, cat:'espace', spec:'Scénographie',
+    title:'Théâtre de Mahdia — Mise en scène',
+    student:'Malek Hamdi', supervisor:'Prof. Kamel Bouzid',
+    year:'2024-2025', icon:'🎭',
+    bg:'linear-gradient(135deg,#d8fde8,#a0f5c8)',
+    desc:'Conception scénographique pour une pièce de théâtre contemporaine au Théâtre Municipal de Mahdia. Le projet joue sur les niveaux, les matières et la lumière pour créer une atmosphère immersive et poétique.',
+    images:['🎭','💡','🎬'], badge:null, top:false
+  },
+  {
+    id:5, cat:'produit', spec:'Création Industrielle',
+    title:'Lampe modulaire écologique',
+    student:'Ahmed Chaabane', supervisor:'Prof. Leila Mansouri',
+    year:'2024-2025', icon:'⚙️',
+    bg:'linear-gradient(135deg,#fdf5d8,#f5e0a0)',
+    desc:'Conception d\'une lampe modulaire utilisant des matériaux recyclés et des techniques de fabrication locale. Le design permet une personnalisation infinie grâce à un système d\'assemblage breveté.',
+    images:['💡','⚙️','🔧'], badge:'⭐ Mention spéciale', top:true
+  },
+  {
+    id:6, cat:'image', spec:'Production Graphique',
+    title:'Affiche Festival Mahdia',
+    student:'Rim Bouazizi', supervisor:'Prof. Nizar Hamrouni',
+    year:'2024-2025', icon:'🖼️',
+    bg:'linear-gradient(135deg,#e8d8fd,#c8a0f5)',
+    desc:'Création d\'une série d\'affiches pour le Festival International de Mahdia. La campagne visuelle mêle typographie arabe calligraphiée et illustration contemporaine pour célébrer le patrimoine culturel de la ville.',
+    images:['🖼️','🎨','📋'], badge:null, top:false
+  },
+  {
+    id:7, cat:'espace', spec:'Architecture d\'Intérieur',
+    title:'Espace coworking — Médina',
+    student:'Omar Ben Ali', supervisor:'Prof. Kamel Bouzid',
+    year:'2024-2025', icon:'🏢',
+    bg:'linear-gradient(135deg,#d8f5fd,#a0e8f5)',
+    desc:'Transformation d\'un riyadh traditionnel en espace de coworking moderne. Le projet préserve l\'architecture historique tout en intégrant des équipements numériques de pointe pour les créatifs.',
+    images:['🏢','💻','🛋️'], badge:null, top:false
+  },
+  {
+    id:8, cat:'produit', spec:'Design Bijoux',
+    title:'Série Méditerranée',
+    student:'Fatma Karray', supervisor:'Prof. Leila Mansouri',
+    year:'2024-2025', icon:'🌊',
+    bg:'linear-gradient(135deg,#d8e8fd,#a0d8f5)',
+    desc:'Collection de bijoux inspirée par la mer Méditerranée et ses couleurs changeantes. Les pièces utilisent des techniques d\'émaillage et des matériaux naturels pour capturer l\'essence de la côte tunisienne.',
+    images:['🌊','💙','✨'], badge:null, top:false
+  },
+  {
+    id:9, cat:'image', spec:'Production Graphique',
+    title:'Packaging — Huile d\'olive Bio',
+    student:'Hana Jlassi', supervisor:'Prof. Nizar Hamrouni',
+    year:'2024-2025', icon:'🫒',
+    bg:'linear-gradient(135deg,#d8fde8,#b0f0c0)',
+    desc:'Conception du packaging complet pour une huile d\'olive biologique de la région de Mahdia. Le design valorise le terroir local tout en s\'inscrivant dans une esthétique contemporaine et écoresponsable.',
+    images:['🫒','🌿','📦'], badge:null, top:false
+  },
+  {
+    id:10, cat:'espace', spec:'Scénographie',
+    title:'Exposition Patrimoine — Musée',
+    student:'Karim Sfar', supervisor:'Prof. Kamel Bouzid',
+    year:'2024-2025', icon:'🏺',
+    bg:'linear-gradient(135deg,#fde8d8,#e8c8a0)',
+    desc:'Scénographie de l\'exposition permanente du Musée Archéologique de Mahdia. Le parcours muséographique crée un dialogue entre les artefacts anciens et une narration visuelle contemporaine.',
+    images:['🏺','🔍','💡'], badge:null, top:false
+  },
+];
+
+// ══════════════════════════════════
+// CATEGORY CONFIG
+// ══════════════════════════════════
+const CAT_CONFIG = {
+  all:    { tag:'Tous les projets', title:'Galerie complète', sub:'Explorez toutes les créations des étudiants de l\'ISAM Mahdia' },
+  espace: { tag:'Design Espace', title:'Architecture & Scénographie', sub:'Espaces intérieurs, scènes et installations' },
+  produit:{ tag:'Design Produit', title:'Création Industrielle & Bijoux', sub:'Objets, mobilier et parures de haute conception' },
+  image:  { tag:'Design Image', title:'Production Graphique', sub:'Identités visuelles, affiches et packaging' },
+  top:    { tag:'Sélection du jury', title:'Top Projets 2025', sub:'Les créations les plus remarquables de l\'année' },
+};
+
+// ══════════════════════════════════
+// BG CANVAS (particules)
+// ══════════════════════════════════
+const bgCanvas = document.getElementById('bg-canvas');
+const bgCtx = bgCanvas.getContext('2d');
+let particles = [];
+
+function initBg() {
+  bgCanvas.width = window.innerWidth;
+  bgCanvas.height = window.innerHeight;
+  particles = Array.from({length:60}, () => ({
+    x: Math.random()*bgCanvas.width, y: Math.random()*bgCanvas.height,
+    r: Math.random()*2+0.5, vx: (Math.random()-0.5)*0.3, vy: (Math.random()-0.5)*0.3,
+    alpha: Math.random()*0.3+0.05,
+  }));
+}
+function drawBg() {
+  bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height);
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    if(p.x<0) p.x=bgCanvas.width; if(p.x>bgCanvas.width) p.x=0;
+    if(p.y<0) p.y=bgCanvas.height; if(p.y>bgCanvas.height) p.y=0;
+    bgCtx.beginPath(); bgCtx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    bgCtx.fillStyle=`rgba(232,98,26,${p.alpha})`; bgCtx.fill();
+  });
+  // connections
+  particles.forEach((p,i) => {
+    particles.slice(i+1).forEach(q => {
+      const d = Math.hypot(p.x-q.x,p.y-q.y);
+      if(d<120){ bgCtx.beginPath(); bgCtx.moveTo(p.x,p.y); bgCtx.lineTo(q.x,q.y); bgCtx.strokeStyle=`rgba(232,98,26,${0.06*(1-d/120)})`; bgCtx.lineWidth=0.5; bgCtx.stroke(); }
+    });
+  });
+  requestAnimationFrame(drawBg);
+}
+window.addEventListener('resize', initBg);
+initBg(); drawBg();
+
+// ══════════════════════════════════
+// RENDER
+// ══════════════════════════════════
+let currentCat = 'all';
+
+function renderProjects(cat) {
+  currentCat = cat;
+  const cfg = CAT_CONFIG[cat];
+  document.getElementById('cat-tag').textContent = cfg.tag;
+  document.getElementById('cat-title').textContent = cfg.title;
+  document.getElementById('cat-sub').textContent = cfg.sub;
+
+  const filtered = cat === 'all' ? PROJECTS : cat === 'top' ? PROJECTS.filter(p=>p.top) : PROJECTS.filter(p=>p.cat===cat);
+  const grid = document.getElementById('projects-grid');
+  grid.innerHTML = '';
+
+  if(filtered.length === 0) {
+    grid.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">Aucun projet dans cette catégorie</div></div>';
+    return;
+  }
+
+  filtered.forEach((p, i) => {
+    const card = document.createElement('div');
+    card.className = 'project-card';
+    card.style.animationDelay = (i * 80) + 'ms';
+    card.innerHTML = `
+      <div class="card-img" style="background:${p.bg}">${p.icon}</div>
+      <div class="card-body">
+        <div class="card-spec">${p.spec}</div>
+        <div class="card-title">${p.title}</div>
+        <div class="card-student">👤 ${p.student}</div>
+        ${p.badge ? `<div class="card-badge">${p.badge}</div>` : ''}
+      </div>
+    `;
+    card.onclick = () => openDetail(p);
+    grid.appendChild(card);
+  });
+}
+
+function filterSpec(cat, btn) {
+  document.querySelectorAll('.spec-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderProjects(cat);
+}
+
+// ══════════════════════════════════
+// DETAIL
+// ══════════════════════════════════
+function openDetail(p) {
+  const imgs = p.images.map(img => `<div class="detail-img-item" style="background:${p.bg}">${img}</div>`).join('');
+  document.getElementById('detail-content').innerHTML = `
+    <div class="detail-header">
+      <div class="detail-thumb" style="background:${p.bg}">${p.icon}</div>
+      <div>
+        <div class="detail-spec">${p.spec}</div>
+        <div class="detail-title">${p.title}</div>
+        <div class="detail-meta">
+          <div class="detail-meta-item"><div class="detail-meta-label">Étudiant</div><div class="detail-meta-value">👤 ${p.student}</div></div>
+          <div class="detail-meta-item"><div class="detail-meta-label">Encadrant</div><div class="detail-meta-value">👨‍🏫 ${p.supervisor}</div></div>
+          <div class="detail-meta-item"><div class="detail-meta-label">Année</div><div class="detail-meta-value">📅 ${p.year}</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="detail-divider"></div>
+    <div class="detail-desc-title">Description du projet</div>
+    <div class="detail-desc">${p.desc}</div>
+    <div class="detail-images">${imgs}</div>
+    ${p.badge ? `<div class="detail-badge">${p.badge}</div>` : ''}
+  `;
+  document.getElementById('detail').classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detail').classList.remove('open');
+}
+
+// Close detail on backdrop click
+document.getElementById('detail').addEventListener('click', function(e) {
+  if(e.target === this) closeDetail();
+});
+
+// Keyboard close
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeDetail(); });
+
+// ══════════════════════════════════
+// INIT
+// ══════════════════════════════════
+setTimeout(() => {
+  const intro = document.getElementById('intro');
+  intro.style.transition = 'opacity 0.8s';
+  intro.style.opacity = '0';
+  setTimeout(() => {
+    intro.style.display = 'none';
+    document.getElementById('topbar').classList.add('visible');
+    document.getElementById('main') && document.getElementById('main').classList.add('visible');
+    renderProjects('all');
+  }, 800);
+}, 2000);
+
+// Check URL params
+const urlCat = new URLSearchParams(window.location.search).get('cat');
+if(urlCat) {
+  setTimeout(() => {
+    const btn = document.querySelector(`[onclick*="${urlCat}"]`);
+    if(btn) filterSpec(urlCat, btn);
+  }, 2200);
+}
+</script>
+</body>
+</html>

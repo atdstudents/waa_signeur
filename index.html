@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Waasigneur — Behind every project, a story!</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+    :root { --orange:#E8621A; --dark:#0d0d0d; --white:#ffffff; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { width:100%; height:100%; overflow:hidden; background:var(--dark); font-family:'DM Sans',sans-serif; }
+
+    #intro { position:fixed; inset:0; z-index:1000; background:var(--dark); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:1rem; }
+    .intro-logo { font-family:'Playfair Display',serif; font-size:3rem; font-weight:900; color:var(--white); opacity:0; transform:translateY(30px); animation:introUp 0.8s 0.3s forwards ease; }
+    .intro-logo span { color:var(--orange); }
+    .intro-sub { font-size:0.9rem; color:rgba(255,255,255,0.4); letter-spacing:3px; text-transform:uppercase; opacity:0; animation:introUp 0.8s 0.6s forwards ease; }
+    .intro-bar-wrap { width:200px; height:2px; background:rgba(255,255,255,0.1); border-radius:2px; overflow:hidden; margin-top:1rem; opacity:0; animation:introUp 0.5s 0.9s forwards ease; }
+    .intro-bar { height:100%; background:var(--orange); width:0; animation:barFill 1.2s 1s forwards ease; }
+    @keyframes introUp { to { opacity:1; transform:translateY(0); } }
+    @keyframes barFill { to { width:100%; } }
+
+    #canvas { position:fixed; inset:0; cursor:grab; }
+
+    #ui { position:fixed; inset:0; pointer-events:none; z-index:10; opacity:0; transition:opacity 0.8s; }
+    #ui.visible { opacity:1; }
+
+    .topbar { position:absolute; top:0; left:0; right:0; padding:1.5rem 2.5rem; display:flex; align-items:center; justify-content:space-between; background:linear-gradient(to bottom,rgba(13,13,13,0.9),transparent); pointer-events:all; }
+    .logo-text { font-family:'Playfair Display',serif; font-size:1.4rem; font-weight:900; color:var(--white); text-decoration:none; }
+    .logo-text span { color:var(--orange); }
+    .top-nav { display:flex; gap:1.5rem; align-items:center; }
+    .top-nav a { color:rgba(255,255,255,0.5); text-decoration:none; font-size:0.85rem; font-weight:500; transition:color 0.2s; }
+    .top-nav a:hover { color:var(--orange); }
+    .top-cta { background:var(--orange)!important; color:var(--white)!important; padding:0.45rem 1.2rem; border-radius:50px; font-weight:600!important; box-shadow:0 4px 15px rgba(232,98,26,0.4); }
+
+    .center-text { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; pointer-events:none; }
+    .center-title { font-family:'Playfair Display',serif; font-size:clamp(1.8rem,3vw,2.8rem); font-weight:900; color:var(--white); line-height:1.2; text-shadow:0 0 40px rgba(232,98,26,0.3); }
+    .center-title em { color:var(--orange); font-style:italic; }
+    .center-sub { font-size:0.82rem; color:rgba(255,255,255,0.35); margin-top:0.6rem; letter-spacing:1.5px; text-transform:uppercase; }
+    .center-hint { font-size:0.75rem; color:rgba(255,255,255,0.2); margin-top:1.5rem; animation:hintPulse 2s infinite; }
+    @keyframes hintPulse { 0%,100%{opacity:0.2} 50%{opacity:0.5} }
+
+    .bottombar { position:absolute; bottom:0; left:0; right:0; padding:1.5rem 2.5rem; display:flex; align-items:center; justify-content:space-between; background:linear-gradient(to top,rgba(13,13,13,0.9),transparent); pointer-events:all; }
+    .stats-row { display:flex; gap:2.5rem; }
+    .stat-item { text-align:center; }
+    .stat-num { font-family:'Playfair Display',serif; font-size:1.4rem; font-weight:900; color:var(--orange); }
+    .stat-lbl { font-size:0.68rem; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:1px; }
+    .slogan { font-size:0.78rem; color:rgba(255,255,255,0.2); font-style:italic; }
+
+    #tooltip { position:fixed; z-index:50; pointer-events:none; background:rgba(20,20,20,0.95); border:1px solid rgba(232,98,26,0.3); border-radius:14px; padding:1rem 1.3rem; min-width:180px; backdrop-filter:blur(10px); opacity:0; transform:translateY(8px) scale(0.95); transition:all 0.2s; box-shadow:0 8px 30px rgba(0,0,0,0.5); }
+    #tooltip.show { opacity:1; transform:translateY(0) scale(1); }
+    .tt-icon { font-size:1.5rem; margin-bottom:0.4rem; }
+    .tt-name { font-family:'Playfair Display',serif; font-size:1rem; font-weight:700; color:var(--white); }
+    .tt-desc { font-size:0.75rem; color:rgba(255,255,255,0.4); margin-top:0.2rem; }
+    .tt-cta { font-size:0.72rem; color:var(--orange); font-weight:600; margin-top:0.5rem; }
+
+    #panel { position:fixed; right:0; top:0; bottom:0; width:380px; z-index:100; background:rgba(13,13,13,0.97); border-left:1px solid rgba(232,98,26,0.15); backdrop-filter:blur(20px); padding:2rem; overflow-y:auto; transform:translateX(100%); transition:transform 0.4s cubic-bezier(0.4,0,0.2,1); pointer-events:all; }
+    #panel.open { transform:translateX(0); }
+    .panel-close { position:absolute; top:1.2rem; right:1.2rem; width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,0.06); border:none; color:rgba(255,255,255,0.5); font-size:1rem; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; }
+    .panel-close:hover { background:var(--orange); color:#fff; }
+    .panel-icon { font-size:2.5rem; margin-bottom:0.8rem; }
+    .panel-title { font-family:'Playfair Display',serif; font-size:1.6rem; font-weight:900; color:var(--white); margin-bottom:0.3rem; }
+    .panel-subtitle { font-size:0.82rem; color:rgba(255,255,255,0.35); margin-bottom:1.5rem; }
+    .panel-divider { height:1px; background:rgba(255,255,255,0.07); margin:1.2rem 0; }
+    .panel-item { display:flex; gap:1rem; align-items:flex-start; padding:0.8rem; border-radius:12px; transition:background 0.2s; cursor:pointer; text-decoration:none; }
+    .panel-item:hover { background:rgba(232,98,26,0.1); }
+    .panel-item-thumb { width:48px; height:48px; border-radius:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:1.4rem; }
+    .panel-item-info { flex:1; }
+    .panel-item-title { font-weight:600; color:var(--white); font-size:0.88rem; }
+    .panel-item-sub { font-size:0.75rem; color:rgba(255,255,255,0.35); margin-top:0.15rem; }
+    .panel-tag { display:inline-block; font-size:0.65rem; background:rgba(232,98,26,0.2); color:var(--orange); padding:0.15rem 0.5rem; border-radius:50px; font-weight:600; margin-top:0.3rem; }
+    .panel-go-btn { display:block; width:100%; padding:0.8rem; border-radius:12px; border:none; background:var(--orange); color:#fff; font-family:'DM Sans',sans-serif; font-size:0.9rem; font-weight:600; cursor:pointer; margin-top:1.2rem; text-decoration:none; text-align:center; transition:transform 0.2s,box-shadow 0.2s; }
+    .panel-go-btn:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(232,98,26,0.4); }
+    .panel-hint { text-align:center; font-size:0.72rem; color:rgba(255,255,255,0.2); margin-top:0.8rem; }
+
+    @media(max-width:600px) { #panel{width:100%;} .top-nav{display:none;} .stats-row{gap:1.2rem;} }
+  </style>
+</head>
+<body>
+
+<div id="intro">
+  <img src="logo_waasigneur.png" style="height:60px;opacity:0;transform:translateY(30px);animation:introUp 0.8s 0.3s forwards ease;" alt="Waasigneur"/>
+  <div class="intro-sub">Institut Supérieur des Arts et des Métiers de Mahdia</div>
+  <div class="intro-bar-wrap"><div class="intro-bar"></div></div>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<div id="ui">
+  <div class="topbar">
+    <a href="index.html" style="display:flex;align-items:center;text-decoration:none;"><img src="logo_waasigneur.png" style="height:36px;" alt="Waasigneur"/></a>
+    <nav class="top-nav">
+      <a href="#" onclick="openPanel('accueil');return false">Accueil</a>
+      <a href="projects.html">Projets</a>
+      <a href="#" onclick="openPanel('specialites');return false">Spécialités</a>
+      <a href="podcasts.html">Podcasts</a>
+      <a href="admin.html" class="top-cta">Admin →</a>
+    </nav>
+  </div>
+  <div class="center-text">
+    <div class="center-title">Behind every<br/>project, <em>a story!</em></div>
+    <div class="center-sub">Explore · Discover · Be Inspired</div>
+    <div class="center-hint">← Faites glisser pour tourner · Cliquez sur un nœud →</div>
+  </div>
+  <div class="bottombar">
+    <div class="stats-row">
+      <div class="stat-item"><div class="stat-num">10</div><div class="stat-lbl">Projets</div></div>
+      <div class="stat-item"><div class="stat-num">5</div><div class="stat-lbl">Spécialités</div></div>
+      <div class="stat-item"><div class="stat-num">5</div><div class="stat-lbl">Podcasts</div></div>
+      <div class="stat-item"><div class="stat-num">10</div><div class="stat-lbl">Étudiants</div></div>
+    </div>
+    <div class="slogan">"Behind every project, a story!"</div>
+  </div>
+</div>
+
+<div id="tooltip">
+  <div class="tt-icon" id="tt-icon"></div>
+  <div class="tt-name" id="tt-name"></div>
+  <div class="tt-desc" id="tt-desc"></div>
+  <div class="tt-cta">Cliquer pour explorer →</div>
+</div>
+
+<div id="panel">
+  <button class="panel-close" onclick="closePanel()">✕</button>
+  <div id="panel-content"></div>
+</div>
+
+<script>
+const NODES = [
+  { id:'accueil', label:'Accueil', icon:'🏠', desc:'Page d\'accueil', phi:Math.PI/2, theta:0,
+    panel:{ title:'Accueil', subtitle:'Bienvenue sur Waasigneur', link:'index.html',
+      items:[
+        {icon:'✨',bg:'#fde8d8',title:'Travaux récents',sub:'Dernières créations des étudiants',tag:'Nouveautés', link:'projects.html'},
+        {icon:'🏆',bg:'#fdf5d8',title:'Top projets 2026',sub:'Les meilleurs projets de l\'année',tag:'Sélection', link:'projects.html?cat=top'},
+        {icon:'📅',bg:'#d8fde8',title:'Événements',sub:'Expositions et workshops à venir',tag:'Agenda', link:'#'},
+      ]}},
+  { id:'projets', label:'Projets', icon:'🖼️', desc:'Galerie des projets', phi:Math.PI/4, theta:Math.PI/3,
+    directLink:'projects.html',
+    panel:{ title:'Projets', subtitle:'10 projets publiés', link:'projects.html',
+      items:[
+        {icon:'🎨',bg:'#fde8d8',title:'Identité visuelle — Café Médina',sub:'Amira Ben Salah',tag:'Production Graphique', link:'projects.html?cat=image'},
+        {icon:'🏛️',bg:'#d8e8fd',title:'Villa Sahel — Réaménagement',sub:'Yassine Gharbi',tag:'Architecture', link:'projects.html?cat=espace'},
+        {icon:'💎',bg:'#fdd8f5',title:'Collection Carthage',sub:'Sana Trabelsi',tag:'Design Bijoux', link:'projects.html?cat=produit'},
+        {icon:'⚙️',bg:'#fdf5d8',title:'Lampe modulaire écologique',sub:'Ahmed Chaabane',tag:'Création Industrielle', link:'projects.html?cat=produit'},
+      ]}},
+  { id:'specialites', label:'Spécialités', icon:'🎓', desc:'5 filières de design', phi:Math.PI*3/4, theta:Math.PI*2/3,
+    directLink:'projects.html',
+    panel:{ title:'Spécialités', subtitle:'5 filières de création', link:'projects.html',
+      items:[
+        {icon:'🏛️',bg:'#d8e8fd',title:'Architecture d\'Intérieur',sub:'Design Espace · 2 projets',tag:'Design Espace', link:'projects.html?cat=espace'},
+        {icon:'🎭',bg:'#d8fde8',title:'Scénographie',sub:'Design Espace · 2 projets',tag:'Design Espace', link:'projects.html?cat=espace'},
+        {icon:'⚙️',bg:'#fdf5d8',title:'Création Industrielle',sub:'Design Produit · 2 projets',tag:'Design Produit', link:'projects.html?cat=produit'},
+        {icon:'💎',bg:'#fdd8f5',title:'Design Bijoux',sub:'Design Produit · 2 projets',tag:'Design Produit', link:'projects.html?cat=produit'},
+        {icon:'🎨',bg:'#fde8d8',title:'Production Graphique',sub:'Design Image · 2 projets',tag:'Design Image', link:'projects.html?cat=image'},
+      ]}},
+  { id:'podcasts', label:'Podcasts', icon:'🎙️', desc:'Podcasts avec enseignants', phi:Math.PI/3, theta:Math.PI*4/3,
+    directLink:'podcasts.html',
+    panel:{ title:'Podcasts', subtitle:'5 épisodes disponibles', link:'podcasts.html',
+      items:[
+        {icon:'▶️',bg:'#2a2a2a',title:'Épisode 01 — Design graphique',sub:'Avec Mme. Aicha Zriga',tag:'Design Image', link:'podcasts.html'},
+        {icon:'▶️',bg:'#2a2a2a',title:'Épisode 02 — Architecture d\'intérieur',sub:'Avec Mme. Karima Kacem',tag:'Design Espace', link:'podcasts.html'},
+        {icon:'▶️',bg:'#2a2a2a',title:'Épisode 03 (part 1) — Scénographie',sub:'Avec Mme. Amira Jaghmoun',tag:'Design Espace', link:'podcasts.html'},
+        {icon:'▶️',bg:'#2a2a2a',title:'Épisode 03 (part 2) — Scénographie',sub:'Avec Mme. Amira Jaghmoun',tag:'Design Espace', link:'podcasts.html'},
+        {icon:'▶️',bg:'#2a2a2a',title:'Épisode 04 — Création industrielle',sub:'Avec M. Ramzi Salah',tag:'Design Produit', link:'podcasts.html'},
+      ]}},
+  { id:'top', label:'Top Projets', icon:'🏆', desc:'Projets primés', phi:Math.PI*2/3, theta:Math.PI,
+    directLink:'projects.html?cat=top',
+    panel:{ title:'Top Projets', subtitle:'Sélection du jury 2026', link:'projects.html?cat=top',
+      items:[
+        {icon:'🥇',bg:'#fde8d8',title:'Identité visuelle — Café Médina',sub:'Amira Ben Salah · Prix du jury',tag:'🥇 Prix du jury', link:'projects.html?cat=top'},
+        {icon:'⭐',bg:'#fdf5d8',title:'Lampe modulaire écologique',sub:'Ahmed Chaabane · Mention spéciale',tag:'⭐ Mention', link:'projects.html?cat=top'},
+        {icon:'🎖️',bg:'#d8e8fd',title:'Villa Sahel',sub:'Yassine Gharbi · Meilleure présentation',tag:'🎖️ Présentation', link:'projects.html?cat=top'},
+      ]}},
+  { id:'contact', label:'Contact', icon:'✉️', desc:'Nous contacter', phi:Math.PI*5/6, theta:Math.PI*5/3,
+    panel:{ title:'Contact', subtitle:'ISAM Mahdia', link:'#',
+      items:[
+        {icon:'📍',bg:'#f0eeeb',title:'Adresse',sub:'Mahdia, Tunisie',tag:'Localisation', link:'#'},
+        {icon:'✉️',bg:'#fde8d8',title:'Email',sub:'contact@isam-mahdia.tn',tag:'Email', link:'mailto:contact@isam-mahdia.tn'},
+        {icon:'📞',bg:'#d8fde8',title:'Téléphone',sub:'+216 25 064 222',tag:'Téléphone', link:'#'},
+      ]}},
+];
+
+const canvas=document.getElementById('canvas');
+const ctx=canvas.getContext('2d');
+let W,H,cx,cy;
+let rotX=0.3,rotY=0.5,targetRotX=0.3,targetRotY=0.5;
+let isDragging=false,lastX,lastY,startX,startY;
+let hoveredNode=null,autoRotate=true;
+let lastClickTime=0, lastClickId=null;
+
+function resize(){ W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight; cx=W/2; cy=H/2; }
+resize(); window.addEventListener('resize',resize);
+function getR(){ return Math.min(W,H)*0.28; }
+function sphericalTo3D(phi,theta,r){ return {x:r*Math.sin(phi)*Math.cos(theta), y:r*Math.cos(phi), z:r*Math.sin(phi)*Math.sin(theta)}; }
+function rotate(p){ let x1=p.x*Math.cos(rotY)+p.z*Math.sin(rotY); let z1=-p.x*Math.sin(rotY)+p.z*Math.cos(rotY); let y2=p.y*Math.cos(rotX)-z1*Math.sin(rotX); let z2=p.y*Math.sin(rotX)+z1*Math.cos(rotX); return {x:x1,y:y2,z:z2}; }
+function project(p){ const fov=900,s=fov/(fov+p.z); return {x:cx+p.x*s,y:cy+p.y*s,scale:s}; }
+function getNodes(){ const R=getR(); return NODES.map(n=>{ const p3=sphericalTo3D(n.phi,n.theta,R); const rot=rotate(p3); const p2=project(rot); return {...n,p3,rot,p2,R}; }); }
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  if(autoRotate&&!isDragging) targetRotY+=0.003;
+  rotX+=(targetRotX-rotX)*0.08; rotY+=(targetRotY-rotY)*0.08;
+  const R=getR(); const nodes=getNodes(); nodes.sort((a,b)=>a.rot.z-b.rot.z);
+
+  // Wireframe
+  ctx.strokeStyle='rgba(255,255,255,0.04)'; ctx.lineWidth=0.5;
+  for(let r=0;r<=5;r++){ const phi=(r/5)*Math.PI; ctx.beginPath(); for(let s=0;s<=36;s++){ const theta=(s/36)*Math.PI*2; const p3={x:R*Math.sin(phi)*Math.cos(theta),y:R*Math.cos(phi),z:R*Math.sin(phi)*Math.sin(theta)}; const rot=rotate(p3); const p2=project(rot); s===0?ctx.moveTo(p2.x,p2.y):ctx.lineTo(p2.x,p2.y); } ctx.stroke(); }
+  for(let t=0;t<36;t+=4){ const theta=(t/36)*Math.PI*2; ctx.beginPath(); for(let s=0;s<=20;s++){ const phi=(s/20)*Math.PI; const p3={x:R*Math.sin(phi)*Math.cos(theta),y:R*Math.cos(phi),z:R*Math.sin(phi)*Math.sin(theta)}; const rot=rotate(p3); const p2=project(rot); s===0?ctx.moveTo(p2.x,p2.y):ctx.lineTo(p2.x,p2.y); } ctx.stroke(); }
+
+  // Edges
+  nodes.forEach((n,i)=>{ nodes.forEach((m,j)=>{ if(j<=i)return; const alpha=Math.max(0,(n.rot.z+m.rot.z)/(R*2))*0.12+0.03; ctx.beginPath(); ctx.moveTo(n.p2.x,n.p2.y); ctx.lineTo(m.p2.x,m.p2.y); ctx.strokeStyle=`rgba(232,98,26,${alpha})`; ctx.lineWidth=0.5; ctx.stroke(); }); });
+
+  // Nodes
+  nodes.forEach(n=>{
+    const {p2,rot,label,icon,id}=n;
+    const isHov=hoveredNode===id;
+    const df=(rot.z+R)/(R*2);
+    const size=(22+df*20)*p2.scale;
+    const alpha=0.4+df*0.6;
+    if(isHov||df>0.7){ const g=ctx.createRadialGradient(p2.x,p2.y,0,p2.x,p2.y,size*2.5); g.addColorStop(0,`rgba(232,98,26,${isHov?0.3:0.15})`); g.addColorStop(1,'rgba(232,98,26,0)'); ctx.beginPath(); ctx.arc(p2.x,p2.y,size*2.5,0,Math.PI*2); ctx.fillStyle=g; ctx.fill(); }
+    ctx.beginPath(); ctx.arc(p2.x,p2.y,size+(isHov?6:0),0,Math.PI*2); ctx.strokeStyle=`rgba(232,98,26,${alpha*(isHov?1:0.6)})`; ctx.lineWidth=isHov?2:1; ctx.stroke();
+    const grad=ctx.createRadialGradient(p2.x-size*0.3,p2.y-size*0.3,0,p2.x,p2.y,size); grad.addColorStop(0,`rgba(40,40,40,${alpha})`); grad.addColorStop(1,`rgba(20,20,20,${alpha*0.9})`);
+    ctx.beginPath(); ctx.arc(p2.x,p2.y,size,0,Math.PI*2); ctx.fillStyle=grad; ctx.fill();
+    ctx.font=`${size*0.85}px serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.globalAlpha=alpha; ctx.fillText(icon,p2.x,p2.y); ctx.globalAlpha=1;
+    if(df>0.35||isHov){ ctx.font=`${isHov?600:500} ${11+df*4}px 'DM Sans'`; ctx.fillStyle=isHov?'#E8621A':`rgba(255,255,255,${0.3+df*0.5})`; ctx.fillText(label,p2.x,p2.y+size+14); }
+  });
+  requestAnimationFrame(draw);
+}
+
+function hitTest(mx,my){ const R=getR(); const nodes=getNodes(); for(const n of nodes){ const df=(n.rot.z+R)/(R*2); const size=(22+df*20)*n.p2.scale; const dx=mx-n.p2.x,dy=my-n.p2.y; if(Math.sqrt(dx*dx+dy*dy)<size+8) return n; } return null; }
+
+canvas.addEventListener('mousedown',e=>{ isDragging=true; autoRotate=false; lastX=startX=e.clientX; lastY=startY=e.clientY; canvas.style.cursor='grabbing'; });
+
+window.addEventListener('mouseup',e=>{
+  if(!isDragging)return;
+  const dx=Math.abs(e.clientX-startX),dy=Math.abs(e.clientY-startY);
+  if(dx<5&&dy<5){
+    const hit=hitTest(e.clientX,e.clientY);
+    if(hit){
+      const now=Date.now();
+      // Double-clic → navigation directe
+      if(hit.id===lastClickId && now-lastClickTime<400 && hit.directLink){
+        window.location.href=hit.directLink;
+        return;
+      }
+      lastClickTime=now; lastClickId=hit.id;
+      openPanel(hit.id);
+    }
+  }
+  isDragging=false; canvas.style.cursor='grab';
+  setTimeout(()=>{ autoRotate=true; },3000);
+});
+
+window.addEventListener('mousemove',e=>{
+  if(isDragging){ targetRotY+=(e.clientX-lastX)*0.006; targetRotX+=(e.clientY-lastY)*0.006; targetRotX=Math.max(-1.2,Math.min(1.2,targetRotX)); lastX=e.clientX; lastY=e.clientY; }
+  else{ const hit=hitTest(e.clientX,e.clientY); if(hit){ hoveredNode=hit.id; canvas.style.cursor='pointer'; showTT(e.clientX,e.clientY,hit); } else{ hoveredNode=null; canvas.style.cursor='grab'; hideTT(); } }
+});
+
+let ltx,lty;
+canvas.addEventListener('touchstart',e=>{ isDragging=true; autoRotate=false; ltx=startX=e.touches[0].clientX; lty=startY=e.touches[0].clientY; });
+canvas.addEventListener('touchmove',e=>{ e.preventDefault(); targetRotY+=(e.touches[0].clientX-ltx)*0.006; targetRotX+=(e.touches[0].clientY-lty)*0.006; targetRotX=Math.max(-1.2,Math.min(1.2,targetRotX)); ltx=e.touches[0].clientX; lty=e.touches[0].clientY; },{passive:false});
+canvas.addEventListener('touchend',e=>{ isDragging=false; const dx=Math.abs(ltx-startX),dy=Math.abs(lty-startY); if(dx<10&&dy<10){ const t=e.changedTouches[0]; const hit=hitTest(t.clientX,t.clientY); if(hit) openPanel(hit.id); } setTimeout(()=>{ autoRotate=true; },3000); });
+
+const tooltip=document.getElementById('tooltip');
+function showTT(mx,my,node){
+  document.getElementById('tt-icon').textContent=node.icon;
+  document.getElementById('tt-name').textContent=node.label;
+  document.getElementById('tt-desc').textContent=node.desc;
+  let tx=mx+20,ty=my-80; if(tx+200>W) tx=mx-210; if(ty<0) ty=my+20;
+  tooltip.style.left=tx+'px'; tooltip.style.top=ty+'px'; tooltip.classList.add('show');
+}
+function hideTT(){ tooltip.classList.remove('show'); }
+
+const panel=document.getElementById('panel');
+function openPanel(id){
+  hideTT();
+  const node=NODES.find(n=>n.id===id); if(!node)return;
+  const p=node.panel;
+  const items=p.items.map(it=>`
+    <a href="${it.link||p.link}" class="panel-item">
+      <div class="panel-item-thumb" style="background:${it.bg}">${it.icon}</div>
+      <div class="panel-item-info">
+        <div class="panel-item-title">${it.title}</div>
+        <div class="panel-item-sub">${it.sub}</div>
+        <span class="panel-tag">${it.tag}</span>
+      </div>
+    </a>`).join('');
+  const dblHint = node.directLink ? `<div class="panel-hint">💡 Double-cliquez sur le nœud pour accéder directement</div>` : '';
+  document.getElementById('panel-content').innerHTML=`
+    <div class="panel-icon">${node.icon}</div>
+    <div class="panel-title">${p.title}</div>
+    <div class="panel-subtitle">${p.subtitle}</div>
+    <div class="panel-divider"></div>
+    ${items}
+    <a href="${p.link}" class="panel-go-btn">Explorer ${p.title} →</a>
+    ${dblHint}
+  `;
+  panel.classList.add('open'); autoRotate=false;
+}
+function closePanel(){ panel.classList.remove('open'); setTimeout(()=>{ autoRotate=true; },1000); }
+
+setTimeout(()=>{
+  const intro=document.getElementById('intro');
+  intro.style.transition='opacity 0.8s'; intro.style.opacity='0';
+  setTimeout(()=>{ intro.style.display='none'; document.getElementById('ui').classList.add('visible'); },800);
+},2500);
+
+draw();
+</script>
+</body>
+</html>
